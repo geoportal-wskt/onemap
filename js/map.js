@@ -171,51 +171,63 @@ var searchControl = L.Control.extend({
 });
 map.addControl(new searchControl());
 
-// --- 10. LOGIKA EKSEKUSI PENCARIAN ---
+// --- 10. LOGIKA EKSEKUSI PENCARIAN (REVISI HIERARKI LAYER) ---
 function executeSearch() {
     var input = document.getElementById('search-input').value.toLowerCase();
     if (!input) return; // Abaikan jika kotak pencarian kosong
 
     var found = false;
 
-    // Looping (periksa) semua grup layer yang ada: site, bm, sta, alinyemen, row
+    // Looping semua grup layer (site, bm, sta, dll)
     Object.keys(layers).forEach(function(key) {
-        layers[key].eachLayer(function(layer) {
-            if (layer.feature && layer.feature.properties) {
-                // Ubah semua data atribut/properties menjadi teks huruf kecil
-                var propsText = JSON.stringify(layer.feature.properties).toLowerCase();
-                
-                // Jika input pencarian ditemukan di dalam teks atribut
-                if (propsText.includes(input)) {
+        
+        // Cek isi dari setiap grup layer
+        layers[key].eachLayer(function(geoJsonGroup) {
+            
+            // Karena data berupa GeoJSON, kita harus masuk satu tingkat lagi ke dalam titik/garisnya
+            if (geoJsonGroup.eachLayer) {
+                geoJsonGroup.eachLayer(function(layer) {
                     
-                    // 1. Nyalakan layer jika sedang disembunyikan oleh filter legenda
-                    if (!map.hasLayer(layers[key])) {
-                        map.addLayer(layers[key]);
-                        var legendItem = document.querySelector('.legend-item[data-layer="' + key + '"]');
-                        if (legendItem) {
-                            legendItem.style.opacity = '1';
-                            legendItem.style.textDecoration = 'none';
+                    if (layer.feature && layer.feature.properties) {
+                        // Ubah semua atribut menjadi teks huruf kecil
+                        var propsText = JSON.stringify(layer.feature.properties).toLowerCase();
+                        
+                        // Jika kata kunci ditemukan
+                        if (propsText.includes(input)) {
+                            
+                            // 1. Nyalakan layer jika sedang disembunyikan oleh filter
+                            if (!map.hasLayer(layers[key])) {
+                                map.addLayer(layers[key]);
+                                var legendItem = document.querySelector('.legend-item[data-layer="' + key + '"]');
+                                if (legendItem) {
+                                    legendItem.style.opacity = '1';
+                                    legendItem.style.textDecoration = 'none';
+                                }
+                            }
+
+                            // 2. Arahkan kamera ke aset yang ditemukan
+                            if (layer.getBounds) {
+                                // Untuk Polygon/Garis
+                                map.fitBounds(layer.getBounds()); 
+                            } else if (layer.getLatLng) {
+                                // Untuk Titik (Marker)
+                                map.setView(layer.getLatLng(), 15); 
+                            }
+                            
+                            // 3. Buka popup informasi
+                            layer.openPopup();
+                            
+                            // 4. Highlight warna kuning (memanfaatkan logika highlight yang sudah kita buat)
+                            layer.fire('click'); 
+
+                            found = true;
                         }
                     }
-
-                    // 2. Arahkan kamera ke aset yang ditemukan
-                    if (layer.getBounds) {
-                        // Jika poligon / garis, sesuaikan layar agar seluruh bentuk terlihat
-                        map.fitBounds(layer.getBounds()); 
-                    } else if (layer.getLatLng) {
-                        // Jika titik, zoom mendekat ke titik tersebut
-                        map.setView(layer.getLatLng(), 16); 
-                    }
-                    
-                    // 3. Buka popup informasi secara otomatis
-                    layer.openPopup();
-                    found = true;
-                }
+                });
             }
         });
     });
 
-    // Beri peringatan jika data tidak ditemukan
     if (!found) {
         alert("Data dengan kata kunci '" + input + "' tidak ditemukan.");
     }
