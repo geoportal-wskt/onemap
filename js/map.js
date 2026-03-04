@@ -135,7 +135,7 @@ document.querySelectorAll('.legend-item').forEach(item => {
     });
 });
 
-// --- 9. TOMBOL SEARCH CONTROL (Mencari Teks Atribut Layer) ---
+// 9. TOMBOL SEARCH CONTROL (Mencari Teks Atribut Layer) ---
 var searchControl = L.Control.extend({
     options: { position: 'topleft' }, // Posisi di kiri atas, di bawah tombol Home
     onAdd: function (map) {
