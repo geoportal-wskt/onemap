@@ -65,13 +65,18 @@ function onEachFeature(feature, layer) {
     });
 
     if (feature.properties) {
-        // Koreksi tag <small> agar tampilan atribut rapi
-        var content = "<div style='min-width:200px; font-family:Arial;'><b>Detail Aset</b><hr style='margin:5px 0;'>";
-        for (var key in feature.properties) {
-            content += `<small><b>${key.toUpperCase()}:</b> ${feature.properties[key]}</small><br>`;
+            // Koreksi tag <small> agar tampilan atribut rapi
+            var content = "<div style='min-width:200px; font-family:Arial;'><b>Detail Aset</b><hr style='margin:5px 0;'>";
+            for (var key in feature.properties) {
+                
+                // --- TAMBAHKAN BARIS INI DI SINI ---
+                if (key.toLowerCase() === 'link') continue;
+                // -----------------------------------
+
+                content += `<small><b>${key.toUpperCase()}:</b> ${feature.properties[key]}</small><br>`;
+            }
+            layer.bindPopup(content + "</div>");
         }
-        layer.bindPopup(content + "</div>");
-    }
 }
 
 // 7. Memuat Data Sesuai Legenda
